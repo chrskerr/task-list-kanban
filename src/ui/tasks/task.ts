@@ -40,8 +40,8 @@ export class Task {
 					this._column = tag as ColumnTag;
 				}
 				tags.delete(tag);
-				this.content = this.content.replaceAll(`#${tag}`, "").trim();
 			}
+				this.content = this.content.replaceAll(`#${tag}`, "").trim(); //Moving this section so it deletes all tags from content regardless.
 		}
 
 		this.tags = tags;
@@ -95,6 +95,7 @@ export class Task {
 		return [
 			`- [${this.done ? "x" : " "}] `,
 			this.content.trim(),
+			this.tags.size > 0 ? ` ${Array.from(this.tags).map(tag => `#${tag}`).join(" ")}` : "", // CODE CHANGED HERE: Join tags with spaces
 			this.column ? ` #${this.column}` : "",
 			this.blockLink ? ` ^${this.blockLink}` : "",
 		]
