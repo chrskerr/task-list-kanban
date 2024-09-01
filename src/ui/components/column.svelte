@@ -19,6 +19,10 @@
 	export let taskActions: TaskActions;
 	export let columnTagTableStore: Readable<ColumnTagTable>;
 	export let showFilepath: boolean;
+	export let openLinkText: (
+		linkText: string,
+		sourcePath: string,
+	) => Promise<void>;
 
 	function getColumnTitle(
 		column: ColumnTag | DefaultColumns,
@@ -136,6 +140,7 @@
 						{taskActions}
 						{columnTagTableStore}
 						{showFilepath}
+						{openLinkText}
 					/>
 				{/each}
 				{#if isColumnTag(column, columnTagTableStore)}

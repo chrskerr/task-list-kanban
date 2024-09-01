@@ -1,5 +1,6 @@
 import type { TFile, Vault } from "obsidian";
-import { isTaskString, Task } from "./task";
+import { isTaskString } from "../../parsing/tasks/tasks";
+import { Task } from "./task";
 import type { ColumnTagTable } from "../columns/columns";
 import { get, type Readable } from "svelte/store";
 

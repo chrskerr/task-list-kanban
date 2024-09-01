@@ -11,6 +11,10 @@
 	export let taskActions: TaskActions;
 	export let columnTagTableStore: Readable<ColumnTagTable>;
 	export let showFilepath: boolean;
+	export let openLinkText: (
+		linkText: string,
+		sourcePath: string,
+	) => Promise<void>;
 
 	const mdConverted = new Converter({
 		simplifiedAutoLink: true,
@@ -91,6 +95,22 @@
 		e.currentTarget.style.height = `0px`;
 		e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
 	}
+
+	function captureInternalLinkClicks(e: Event) {
+		if (!(e.target instanceof HTMLAnchorElement)) return;
+
+		const [, id] = e.target.href.match(/#internal-(\d+)$/) ?? [];
+		if (id == null) return;
+
+		const internalLink = task.internalLinks.find((link) => link.id === id);
+		if (!internalLink) return;
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		console.log("[[../Finance]]", task.path);
+		openLinkText("[[Finance]]", task.path);
+	}
 </script>
 
 <div
@@ -102,7 +122,9 @@
 	on:dragend={handleDragEnd}
 >
 	<div class="task-body">
-		<div class="task-content">
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div class="task-content" on:click={captureInternalLinkClicks}>
 			{#if isEditing}
 				<textarea
 					class:editing={isEditing}

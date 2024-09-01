@@ -135,6 +135,8 @@ ${parsed.body}
 				columnTagTableStore: this.columnTagTableStore,
 				openSettings: () => this.openSettingsModal(),
 				settingsStore: this.settingsStore,
+				openLinkText: (linkText: string, sourcePath: string) =>
+					this.app.workspace.openLinkText(linkText, sourcePath),
 			},
 		});
 	}

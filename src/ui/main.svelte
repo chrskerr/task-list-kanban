@@ -17,6 +17,10 @@
 	export let openSettings: () => Promise<void>;
 	export let columnTagTableStore: Readable<ColumnTagTable>;
 	export let settingsStore: Writable<SettingValues>;
+	export let openLinkText: (
+		linkText: string,
+		sourcePath: string,
+	) => Promise<void>;
 
 	$: tags = $tasksStore.reduce((acc, curr) => {
 		for (const tag of curr.tags) {
@@ -106,6 +110,7 @@
 				{taskActions}
 				{columnTagTableStore}
 				{showFilepath}
+				{openLinkText}
 			/>
 			{#each columns as column}
 				<Column
@@ -114,6 +119,7 @@
 					{taskActions}
 					{columnTagTableStore}
 					{showFilepath}
+					{openLinkText}
 				/>
 			{/each}
 			<Column
@@ -122,6 +128,7 @@
 				{taskActions}
 				{columnTagTableStore}
 				{showFilepath}
+				{openLinkText}
 			/>
 		</div>
 	</div>
