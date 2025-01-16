@@ -101,8 +101,11 @@ export function createTaskActions({
 			if (defaultTaskPath && defaultTaskPath.trim()) {
 				const file = vault.getAbstractFileByPath(defaultTaskPath);
 				if (file instanceof TFile) {
-					updateRow(vault, file, undefined, `- [ ]  #${column}`);
-					return;
+					const exists = await vault.adapter.exists(file.path);
+					if (exists) {
+						updateRow(vault, file, undefined, `- [ ]  #${column}`);
+						return;
+					}
 				}
 			}
 
