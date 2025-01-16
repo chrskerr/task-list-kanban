@@ -51,6 +51,19 @@ export class SettingsModal extends Modal {
 			});
 
 		new Setting(this.contentEl)
+			.setName("Default task location")
+			.setDesc(
+				"Where should new tasks go? Use an .md file (leave blank to decide each time)."
+			)
+			.addText((text) => {
+				text.setPlaceholder("folder/file.md")
+					.setValue(this.settings.defaultTaskPath ?? "")
+					.onChange((value) => {
+						this.settings.defaultTaskPath = value;
+					});
+			});
+
+		new Setting(this.contentEl)
 			.setName("Show filepath")
 			.setDesc("Show the filepath on each task in Kanban?")
 			.addToggle((toggle) => {
