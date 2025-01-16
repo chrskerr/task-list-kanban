@@ -8,6 +8,9 @@ import {
 import type { Task } from "./task";
 import type { Metadata } from "./tasks";
 import type { ColumnTag } from "../columns/columns";
+import { type Writable } from "svelte/store";
+import type { SettingValues } from "../settings/settings_store";
+import { get } from "svelte/store";
 
 export type TaskActions = {
 	changeColumn: (id: string, column: ColumnTag) => Promise<void>;
@@ -24,11 +27,13 @@ export function createTaskActions({
 	metadataByTaskId,
 	vault,
 	workspace,
+	settingsStore,
 }: {
 	tasksByTaskId: Map<string, Task>;
 	metadataByTaskId: Map<string, Metadata>;
 	vault: Vault;
 	workspace: Workspace;
+	settingsStore: Writable<SettingValues>;
 }): TaskActions {
 	async function updateRowWithTask(
 		id: string,
@@ -92,6 +97,15 @@ export function createTaskActions({
 		},
 
 		async addNew(column, e) {
+			const defaultTaskPath = get(settingsStore).defaultTaskPath;
+			if (defaultTaskPath && defaultTaskPath.trim()) {
+				const file = vault.getAbstractFileByPath(defaultTaskPath);
+				if (file instanceof TFile) {
+					updateRow(vault, file, undefined, `- [ ]  #${column}`);
+					return;
+				}
+			}
+
 			const files = vault
 				.getMarkdownFiles()
 				.sort((a, b) => a.path.localeCompare(b.path));
