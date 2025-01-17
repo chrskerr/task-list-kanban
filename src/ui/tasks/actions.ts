@@ -97,18 +97,32 @@ export function createTaskActions({
 		},
 
 		async addNew(column, e) {
-			// Get configured default path from settings, exit if not set
+			// Get configured default path from settings
 			const defaultTaskPath = get(settingsStore).defaultTaskPath;
 
-			// Check if default path setting exists and is not empty
 			if (defaultTaskPath?.trim()) {
-				// Extract folder path from full file path by removing everything after last '/'
-				const folderPath = defaultTaskPath.substring(
+				// Get the kanban board's directory path
+				const currentFilePath =
+					workspace.getActiveFile()?.parent?.path || "";
+
+				// Determine if path is absolute (starts with / or \) or relative
+				const isAbsolutePath = /^[/\\]/.test(defaultTaskPath);
+
+				// If relative path, combine with current directory
+				const fullPath = isAbsolutePath
+					? defaultTaskPath
+					: `${currentFilePath}/${defaultTaskPath}`.replace(
+							/\/+/g,
+							"/"
+					  );
+
+				// Extract folder path from full file path
+				const folderPath = fullPath.substring(
 					0,
-					defaultTaskPath.lastIndexOf("/")
+					fullPath.lastIndexOf("/")
 				);
 
-				// Create folder structure if it doesn't exist yet
+				// Create folder structure if needed
 				if (folderPath) {
 					const folderExists = await vault.adapter.exists(folderPath);
 					if (!folderExists) {
@@ -116,20 +130,21 @@ export function createTaskActions({
 					}
 				}
 
-				// Create the actual markdown file if it doesn't exist yet
-				const exists = await vault.adapter.exists(defaultTaskPath);
+				// Create the markdown file if needed
+				const exists = await vault.adapter.exists(fullPath);
 				if (!exists) {
-					await vault.create(defaultTaskPath, "");
+					await vault.create(fullPath, "");
 				}
 
-				// Get file handle and validate it's a proper markdown file
-				// TODO files need to be checked for .md extension
-				const file = vault.getAbstractFileByPath(defaultTaskPath);
+				// Get file handle and validate it's a markdown file
+				const file = vault.getAbstractFileByPath(fullPath);
 				if (file instanceof TFile) {
 					updateRow(vault, file, undefined, `- [ ]  #${column}`);
 					return;
 				}
 			}
+
+			// Rest of existing file picker code...
 
 			const target = e.target as HTMLButtonElement | undefined;
 			if (!target) {
