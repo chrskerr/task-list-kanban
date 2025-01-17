@@ -37,6 +37,7 @@ export const defaultSettings: SettingValues = {
 	consolidateTags: false,
 	uncategorizedVisibility: VisibilityOption.Auto,
 	doneVisibility: VisibilityOption.AlwaysShow,
+	defaultTaskPath: "Tasks.md",
 };
 
 export const createSettingsStore = () =>
