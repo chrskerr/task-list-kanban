@@ -53,10 +53,10 @@ export class SettingsModal extends Modal {
 		new Setting(this.contentEl)
 			.setName("Default task location")
 			.setDesc(
-				"Where should new tasks go? Use an .md file (leave blank to decide each time)."
+				"In what .md file should new tasks go? Leave blank to choose each time a new task is added. Start with a forward slash (/) for a full folder path. Otherwise, tasks go to specified path in the current folder."
 			)
 			.addText((text) => {
-				text.setPlaceholder("folder/file.md")
+				text.setPlaceholder("Tasks.md")
 					.setValue(this.settings.defaultTaskPath ?? "")
 					.onChange((value) => {
 						this.settings.defaultTaskPath = value;
