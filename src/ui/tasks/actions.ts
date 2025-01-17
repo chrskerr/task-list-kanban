@@ -97,21 +97,39 @@ export function createTaskActions({
 		},
 
 		async addNew(column, e) {
+			// Get configured default path from settings, exit if not set
 			const defaultTaskPath = get(settingsStore).defaultTaskPath;
-			if (defaultTaskPath && defaultTaskPath.trim()) {
-				const file = vault.getAbstractFileByPath(defaultTaskPath);
-				if (file instanceof TFile) {
-					const exists = await vault.adapter.exists(file.path);
-					if (exists) {
-						updateRow(vault, file, undefined, `- [ ]  #${column}`);
-						return;
+
+			// Check if default path setting exists and is not empty
+			if (defaultTaskPath?.trim()) {
+				// Extract folder path from full file path by removing everything after last '/'
+				const folderPath = defaultTaskPath.substring(
+					0,
+					defaultTaskPath.lastIndexOf("/")
+				);
+
+				// Create folder structure if it doesn't exist yet
+				if (folderPath) {
+					const folderExists = await vault.adapter.exists(folderPath);
+					if (!folderExists) {
+						await vault.createFolder(folderPath);
 					}
 				}
-			}
 
-			const files = vault
-				.getMarkdownFiles()
-				.sort((a, b) => a.path.localeCompare(b.path));
+				// Create the actual markdown file if it doesn't exist yet
+				const exists = await vault.adapter.exists(defaultTaskPath);
+				if (!exists) {
+					await vault.create(defaultTaskPath, "");
+				}
+
+				// Get file handle and validate it's a proper markdown file
+				// TODO files need to be checked for .md extension
+				const file = vault.getAbstractFileByPath(defaultTaskPath);
+				if (file instanceof TFile) {
+					updateRow(vault, file, undefined, `- [ ]  #${column}`);
+					return;
+				}
+			}
 
 			const target = e.target as HTMLButtonElement | undefined;
 			if (!target) {
@@ -158,6 +176,10 @@ export function createTaskActions({
 				[label: string]: Folder | TFile;
 			}
 			const folder: Folder = {};
+
+			const files = vault
+				.getMarkdownFiles()
+				.sort((a, b) => a.path.localeCompare(b.path));
 
 			for (const file of files) {
 				const segments = file.path.split("/");
