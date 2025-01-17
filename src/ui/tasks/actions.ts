@@ -109,12 +109,21 @@ export function createTaskActions({
 				const isAbsolutePath = /^[/\\]/.test(defaultTaskPath);
 
 				// If relative path, combine with current directory
-				const fullPath = isAbsolutePath
+				let fullPath = isAbsolutePath
 					? defaultTaskPath
 					: `${currentFilePath}/${defaultTaskPath}`.replace(
 							/\/+/g,
 							"/"
 					  );
+
+				// Add .md extension if needed
+				if (
+					!fullPath.endsWith("/") &&
+					!fullPath.endsWith("\\") &&
+					!fullPath.endsWith(".md")
+				) {
+					fullPath += ".md";
+				}
 
 				// Extract folder path from full file path
 				const folderPath = fullPath.substring(
