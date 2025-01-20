@@ -193,6 +193,32 @@ export function createTaskActions({
 	};
 }
 
+async function ensureFolder(
+	vault: Vault,
+	folderPath: string
+): Promise<boolean> {
+	if (!folderPath) return true;
+	const folderExists = await vault.adapter.exists(folderPath);
+
+	if (!folderExists) {
+		await vault.createFolder(folderPath);
+		return await vault.adapter.exists(folderPath);
+	}
+	return true;
+}
+
+async function ensureMarkdownFile(
+	vault: Vault,
+	path: string
+): Promise<TFile | null> {
+	const exists = await vault.adapter.exists(path);
+	if (!exists) {
+		await vault.create(path, "");
+	}
+	const file = vault.getAbstractFileByPath(path);
+	return file instanceof TFile ? file : null;
+}
+
 async function addAtPath(
 	vault: Vault,
 	column: ColumnTag,
@@ -205,33 +231,25 @@ async function addAtPath(
 
 	try {
 		const fullPath = normalizePath(defaultTaskPath, workspace);
-
-		// Extract folder path from full file path
 		const folderPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
 
-		// Create folder structure if needed
-		if (folderPath) {
-			const folderExists = await vault.adapter.exists(folderPath);
-			if (!folderExists) {
-				await vault.createFolder(folderPath);
-			}
+		const folder = await ensureFolder(vault, folderPath);
+		if (!folder) {
+			console.error(`Failed to create/access folder at ${folderPath}`);
+			return false;
 		}
 
-		// Create the markdown file if needed
-		const exists = await vault.adapter.exists(fullPath);
-		if (!exists) {
-			await vault.create(fullPath, "");
-		}
+		const file = await ensureMarkdownFile(vault, fullPath);
 
-		// Get file handle and validate it's a markdown file
-		const file = vault.getAbstractFileByPath(fullPath);
-		if (file instanceof TFile) {
+		if (file) {
 			updateRow(vault, file, undefined, `- [ ]  #${column}`);
 			return true;
 		}
 
+		console.error(`Failed to create/access markdown file at ${fullPath}`);
 		return false;
 	} catch (error) {
+		console.error(`Error in addAtPath: ${error}`);
 		return false;
 	}
 }
