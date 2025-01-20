@@ -100,79 +100,25 @@ export function createTaskActions({
 			// Get configured default path from settings
 			const defaultTaskPath = get(settingsStore).defaultTaskPath;
 
+			// The following characters are not allowed by obsidian in file names
 			const forbiddenCharacters = /[*\\"<>:|?]/;
-			console.log(defaultTaskPath);
+
 			if (
 				defaultTaskPath?.trim() &&
 				!forbiddenCharacters.test(defaultTaskPath)
 			) {
-				// Get the kanban board's directory path
-				const currentFilePath =
-					workspace.getActiveFile()?.parent?.path || "";
-				console.log("currentFilePath: " + currentFilePath);
-
-				// Determine if path is absolute (starts with "/") or relative
-				const isAbsolutePath = defaultTaskPath.startsWith("/");
-				console.log(isAbsolutePath);
-
-				// If relative path, combine with current directory
-				let fullPath = isAbsolutePath
-					? defaultTaskPath
-					: `${currentFilePath}/${defaultTaskPath}`;
-
-				// Remove leading slashes, even if there are multiple
-				fullPath = fullPath.replace(/^\/+/, "");
-
-				// If path ends with "/", add default file
-				fullPath = fullPath.endsWith("/")
-					? fullPath + "Tasks.md"
-					: fullPath;
-
-				fullPath = fullPath.startsWith("//")
-					? fullPath.substring(1)
-					: fullPath;
-
-				// Add .md extension if needed
-				if (!fullPath.endsWith(".md")) {
-					fullPath += ".md";
-				}
-
-				console.log("fullpath na md:" + fullPath);
-
-				// Extract folder path from full file path
-				const folderPath = fullPath.substring(
-					0,
-					fullPath.lastIndexOf("/")
+				// Try to add task at default path
+				const added = await addAtPath(
+					vault,
+					column,
+					defaultTaskPath,
+					workspace
 				);
-				console.log("folderpath:" + folderPath);
 
-				// Create folder structure if needed
-				if (folderPath) {
-					const folderExists = await vault.adapter.exists(folderPath);
-					console.log("folderexists:" + folderExists);
-					if (!folderExists) {
-						await vault.createFolder(folderPath);
-					}
-				}
-
-				// Create the markdown file if needed
-				const exists = await vault.adapter.exists(fullPath);
-				console.log("exists:" + exists);
-				if (!exists) {
-					await vault.create(fullPath, "");
-				}
-
-				// Get file handle and validate it's a markdown file
-				const file = vault.getAbstractFileByPath(fullPath);
-				console.log(file);
-				console.log(file instanceof TFile);
-				if (file instanceof TFile) {
-					updateRow(vault, file, undefined, `- [ ]  #${column}`);
+				if (added) {
 					return;
 				}
 			}
-
-			// Rest of existing file picker code...
 
 			const target = e.target as HTMLButtonElement | undefined;
 			if (!target) {
@@ -245,6 +191,75 @@ export function createTaskActions({
 			createMenu(folder, undefined);
 		},
 	};
+}
+
+async function addAtPath(
+	vault: Vault,
+	column: ColumnTag,
+	defaultTaskPath: string,
+	workspace: Workspace
+): Promise<boolean> {
+	// Try to add task at default path, creating file if needed
+	// Returns true if task was added, false if not
+	// Try/catch is used because file operations could cause unforseen os-level errors
+
+	try {
+		const fullPath = normalizePath(defaultTaskPath, workspace);
+
+		// Extract folder path from full file path
+		const folderPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+
+		// Create folder structure if needed
+		if (folderPath) {
+			const folderExists = await vault.adapter.exists(folderPath);
+			if (!folderExists) {
+				await vault.createFolder(folderPath);
+			}
+		}
+
+		// Create the markdown file if needed
+		const exists = await vault.adapter.exists(fullPath);
+		if (!exists) {
+			await vault.create(fullPath, "");
+		}
+
+		// Get file handle and validate it's a markdown file
+		const file = vault.getAbstractFileByPath(fullPath);
+		if (file instanceof TFile) {
+			updateRow(vault, file, undefined, `- [ ]  #${column}`);
+			return true;
+		}
+
+		return false;
+	} catch (error) {
+		return false;
+	}
+}
+
+function normalizePath(defaultTaskPath: string, workspace: Workspace): string {
+	// Get the kanban board's directory path
+	const currentFilePath = workspace.getActiveFile()?.parent?.path || "";
+
+	// Determine if path is absolute (starts with "/") or relative
+	const isAbsolutePath = defaultTaskPath.startsWith("/");
+
+	// If relative path, combine with current directory
+	let fullPath = isAbsolutePath
+		? defaultTaskPath
+		: `${currentFilePath}/${defaultTaskPath}`;
+
+	// Remove leading slashes, even if there are multiple
+	fullPath = fullPath.replace(/^\/+/, "");
+
+	// If path ends with "/", add default file
+	fullPath = fullPath.endsWith("/") ? fullPath + "Tasks.md" : fullPath;
+
+	// Add .md extension if needed
+	if (!fullPath.endsWith(".md")) {
+		fullPath += ".md";
+	}
+
+	return fullPath;
 }
 
 async function updateRow(
